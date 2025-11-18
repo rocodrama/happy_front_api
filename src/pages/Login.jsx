@@ -119,29 +119,27 @@ function Login() {
       return;
     }
 
-    // try {
-    //   // 백엔드 API 호출 (api.js의 loginUser 함수 사용)
-    //   const data = await loginUser({ email, password });
+    try {
+      // 백엔드 API 호출 (api.js의 loginUser 함수 사용)
+      const data = await loginUser({ email, password });
 
-    //   // 성공 시 실행되는 부분
-    //   console.log("로그인 성공:", data);
+      // 성공 시 실행되는 부분
+      console.log("로그인 성공:", data);
       
-    //   // 중요: 토큰과 닉네임을 브라우저 저장소(localStorage)에 저장
-    //   localStorage.setItem('access_token', data.access_token);
-    //   localStorage.setItem('nickname', data.nickname); 
-    //   localStorage.setItem('user_id', data.user_id);
+      // 중요: 토큰과 닉네임을 브라우저 저장소(localStorage)에 저장
+      localStorage.setItem('access_token', data.access_token);
+      localStorage.setItem('nickname', data.nickname); 
+      localStorage.setItem('user_id', data.user_id);
 
-    //   alert(`환영합니다, ${data.nickname}님!`);
-    //   navigate('/diaries'); // 메인 화면으로 이동
+      alert(`환영합니다, ${data.nickname}님!`);
+      navigate('/diaries'); // 메인 화면으로 이동
 
-    // } catch (error) {
-    //   // 실패 시 실행되는 부분
-    //   console.error("로그인 실패:", error);
-    //   alert("로그인에 실패했습니다. 이메일이나 비밀번호를 확인해주세요.");
-    // }
+    } catch (error) {
+      // 실패 시 실행되는 부분
+      console.error("로그인 실패:", error);
+      alert("로그인에 실패했습니다. 이메일이나 비밀번호를 확인해주세요.");
+    }
 
-    localStorage.setItem('nickname', '테스트유저'); // 임시 저장
-    navigate('/diaries');
   };
 
   return (

@@ -4,7 +4,7 @@ import Signup from './pages/Signup';
 
 import DiaryList from './pages/DiaryList';
 import DiaryDetail from './pages/DiaryDetail';
-import DiaryEdit from './pages/DirayEdit';
+import DiaryEdit from './pages/DiaryEdit';
 
 function App() {
   return (

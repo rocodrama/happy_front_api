@@ -1,8 +1,10 @@
+import { useState, useEffect } from 'react'; // State, Effect 추가
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Header from '../components/Header';
+import { getDiaryDetail } from '../api'; // API 함수 불러오기
 
-// --- 스타일 정의 ---
+// --- 스타일 정의 (기존과 동일) ---
 
 const Container = styled.div`
   background-color: #f0f8ff;
@@ -25,10 +27,9 @@ const SectionBox = styled.div`
   box-shadow: 0 4px 10px rgba(0,0,0,0.03);
 `;
 
-/* [NEW] 제목과 버튼을 가로로 배치하는 컨테이너 */
 const HeaderRow = styled.div`
   display: flex;
-  justify-content: space-between; /* 양쪽 끝으로 배치 */
+  justify-content: space-between; 
   align-items: center;
   border-bottom: 2px solid #f0f0f0;
   padding-bottom: 15px;
@@ -39,10 +40,9 @@ const Title = styled.h2`
   color: #2c3e50;
   font-size: 22px;
   font-weight: bold;
-  margin: 0; /* HeaderRow가 간격을 대신함 */
+  margin: 0; 
 `;
 
-/* [NEW] 상단 전용 작은 버튼 그룹 */
 const TopBtnGroup = styled.div`
   display: flex;
   gap: 10px;
@@ -64,7 +64,6 @@ const SmallButton = styled.button`
     color: #333;
   }
 
-  /* 수정 버튼은 파란색 포인트 */
   &.edit {
     border-color: #6aaefe;
     color: #6aaefe;
@@ -138,7 +137,8 @@ const CutItem = styled.div`
 
 const CutImagePlaceholder = styled.div`
   width: 100%;
-  height: 400px;
+  height: auto;
+  min-height: 300px;
   background-color: #eee;
   display: flex;
   justify-content: center;
@@ -150,7 +150,7 @@ const CutImagePlaceholder = styled.div`
   
   img {
     width: 100%;
-    height: 100%;
+    height: auto;
     object-fit: cover;
   }
 `;
@@ -166,7 +166,6 @@ const CutCaption = styled.div`
   border-radius: 5px;
 `;
 
-/* 하단 큰 버튼 그룹 (유지하거나 제거 가능) */
 const BottomButtonGroup = styled.div`
   display: flex;
   justify-content: center;
@@ -191,31 +190,48 @@ const ActionButton = styled.button`
   }
 `;
 
-// --- 임시 데이터 ---
-const MOCK_RESULT = {
-  date: '2025년 11월 18일',
-  original: '오늘 아침에 늦잠을 자서 지각할 뻔했다. 뛰어가다가 넘어질 뻔했지만 다행히 세이프!',
-  fullStory: '평범한 학생인 주인공은 아침에 눈을 뜨자마자 절망했다. 시계는 이미 등교 시간을 훌쩍 넘기고 있었다. "이건 지각 확정이야!" 그는 바람처럼 달리기 시작했다. 도중에 돌부리에 걸려 넘어질 뻔한 절체절명의 순간, 그는 놀라운 균형 감각으로 위기를 모면하고 교문 안으로 골인했다.',
-  settings: {
-    character: '파란 후드티를 입은 남학생',
-    genre: '학원물/액션',
-    style: '웹툰 스타일',
-    cuts: 4
-  },
-  cuts: [
-    { id: 1, image: 'https://via.placeholder.com/600x400?text=Image+1', text: '눈을 뜨니 8시 30분...?! 늦었다!!!' },
-    { id: 2, image: 'https://via.placeholder.com/600x400?text=Image+2', text: '전속력으로 달리는 주인공. 바람을 가른다!' },
-    { id: 3, image: 'https://via.placeholder.com/600x400?text=Image+3', text: '앗! 돌부리?! 중심을 잃은 그 순간...' },
-    { id: 4, image: 'https://via.placeholder.com/600x400?text=Image+4', text: '휴... 간신히 세이프. 오늘도 평화로운 하루다.' },
-  ]
-};
-
 // --- 컴포넌트 로직 ---
 
 function DiaryDetail() {
-  const { id } = useParams(); 
+  const { id } = useParams(); // URL에서 ID 가져옴
   const navigate = useNavigate();
-  const data = MOCK_RESULT; 
+  
+  // 1. 데이터를 담을 State (초기값 null)
+  const [diary, setDiary] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // 2. 데이터 불러오기 (useEffect)
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await getDiaryDetail(id);
+        setDiary(data);
+      } catch (error) {
+        console.error("일기 상세 조회 실패:", error);
+        alert("일기를 불러오는데 실패했습니다.");
+        navigate('/diaries'); // 실패 시 목록으로 이동
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id, navigate]); // id가 바뀔 때마다 재실행
+
+  // 3. 로딩 중일 때 화면
+  if (loading) {
+    return (
+      <Container>
+        <Header />
+        <div style={{ textAlign: 'center', marginTop: '50px' }}>
+          로딩 중입니다...
+        </div>
+      </Container>
+    );
+  }
+
+  // 4. 데이터가 없을 때 화면 (안전장치)
+  if (!diary) return null;
 
   return (
     <Container>
@@ -224,9 +240,8 @@ function DiaryDetail() {
         
         {/* 1. 상단: 설정 및 전체 이야기 */}
         <SectionBox>
-          {/* [NEW] 제목과 버튼을 가로로 배치 */}
           <HeaderRow>
-            <Title>{data.date}의 일기 기록</Title>
+            <Title>{diary.date}의 일기 기록</Title>
             <TopBtnGroup>
               <SmallButton onClick={() => navigate('/diaries')}>
                 목록
@@ -237,22 +252,25 @@ function DiaryDetail() {
             </TopBtnGroup>
           </HeaderRow>
           
-          <TagRow style={{marginBottom: '20px'}}>
-            <Tag>#{data.settings.genre}</Tag>
-            <Tag>#{data.settings.style}</Tag>
-            <Tag>{data.settings.cuts}컷</Tag>
-            <Tag>👤 {data.settings.character}</Tag>
-          </TagRow>
+          {/* settings가 있을 때만 태그 렌더링 (안전장치) */}
+          {diary.settings && (
+            <TagRow style={{marginBottom: '20px'}}>
+              <Tag>#{diary.settings.genre}</Tag>
+              <Tag>#{diary.settings.style}</Tag>
+              <Tag>{diary.settings.cuts}컷</Tag>
+              <Tag>👤 {diary.settings.character}</Tag>
+            </TagRow>
+          )}
 
           <InfoGrid>
             <InfoItem>
               <h4>📝 일기 원문</h4>
-              <p>{data.original}</p>
+              <p>{diary.original_content}</p>
             </InfoItem>
             
             <InfoItem style={{backgroundColor: '#e8f4fd', border: '1px solid #d1e9ff'}}> 
               <h4>📖 AI 각색 이야기</h4>
-              <p>{data.fullStory}</p>
+              <p>{diary.full_story}</p>
             </InfoItem>
           </InfoGrid>
         </SectionBox>
@@ -263,26 +281,29 @@ function DiaryDetail() {
         </Title>
         
         <CutList>
-          {data.cuts.map((cut) => (
-            <CutItem key={cut.id}>
+          {/* cuts 배열 매핑 */}
+          {diary.cuts && diary.cuts.map((cut) => (
+            <CutItem key={cut.cut_id}>
               <CutImagePlaceholder>
-                <img src={cut.image} alt={`컷 ${cut.id}`} />
+                {cut.image_url ? (
+                  <img src={cut.image_url} alt={`컷 ${cut.cut_number}`} />
+                ) : (
+                  <span>이미지 생성 중...</span>
+                )}
               </CutImagePlaceholder>
               <CutCaption>
-                {cut.id}. {cut.text}
+                {cut.cut_number}. {cut.text}
               </CutCaption>
             </CutItem>
           ))}
         </CutList>
 
-        {/* 3. 최하단: 큰 버튼 그룹 (필요하다면 유지, 위쪽 버튼으로 충분하다면 삭제 가능) */}
+        {/* 3. 최하단 버튼 */}
         <BottomButtonGroup>
           <ActionButton onClick={() => navigate('/diaries')}>
-            목록
+            목록으로 돌아가기
           </ActionButton>
-          <SmallButton className="edit" onClick={() => navigate(`/diaries/${id}/edit`)}>
-            수정
-          </SmallButton>
+          {/* 수정 버튼은 상단에 있으므로 하단은 목록만 둬도 깔끔함 (선택사항) */}
         </BottomButtonGroup>
 
       </ContentWrapper>

@@ -1,9 +1,10 @@
-import { useState } from 'react'; // 상태 관리를 위해 import
+import { useState, useEffect } from 'react'; // useEffect 추가
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Header from '../components/Header'; 
+import { createDiary, getDiaryList } from '../api'; // API 함수 불러오기
 
-// --- 스타일 정의 ---
+// --- 스타일 정의 (기존과 동일) ---
 
 const Container = styled.div`
   background-color: #f0f8ff; 
@@ -69,11 +70,11 @@ const CharacterInput = styled.input`
   border: 1px solid #ddd;
   border-radius: 10px;
   font-size: 14px;
-  margin-bottom: 15px; /* 아래칸과 간격 */
+  margin-bottom: 15px;
   outline: none;
   transition: border-color 0.3s;
   box-sizing: border-box; 
-  background-color: #f9fcff; /* 살짝 다른 배경색 */
+  background-color: #f9fcff;
 
   &:focus {
     border-color: #6aaefe;
@@ -115,6 +116,12 @@ const CreateButton = styled.button`
 
   &:hover {
     background-color: #5a9be0;
+  }
+  
+  /* 로딩 중일 때 스타일 */
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
   }
 `;
 
@@ -172,41 +179,44 @@ const ArrowIcon = styled.div`
   font-size: 14px;
 `;
 
-
-const DUMMY_DIARIES = [
-  {
-    id: 1,
-    date: '2025. 11. 18',
-    original: '오늘 아침에 늦잠을 자서 지각할 뻔했다. 뛰어가다가 넘어질 뻔했지만 다행히 세이프!',
-    llm: '용사는 늦잠이라는 저주에 걸렸다. 전력질주 스킬을 사용하여 위기를 모면했다.',
-  },
-  {
-    id: 2,
-    date: '2025. 11. 17',
-    original: '비가 와서 하루종일 집에 있었다. 파전을 해먹었는데 너무 맛있었다.',
-    llm: '하늘에서 슬픔의 비가 쏟아졌다. 나는 은신처에서 전설의 음식 파전을 연성했다.',
-  },
-  {
-    id: 3,
-    date: '2025. 11. 16',
-    original: '친구랑 싸웠다. 하지만 저녁에 화해하고 같이 치킨을 먹었다.',
-    llm: '동료와 의견 충돌로 결투가 벌어질 뻔했다. 하지만 치킨이라는 평화 조약으로 해결했다.',
-  }
-];
-
 // --- 컴포넌트 로직 ---
 
 function DiaryList() {
   const navigate = useNavigate();
 
-  // 백엔드로 보낼 데이터 변수
+  // 1. 입력 폼 데이터 State
   const [formData, setFormData] = useState({
-    content: '',    // 일기 원문
-    character: '',  // [NEW] 캐릭터 설정
-    genre: '',      // 장르
-    style: '',      // 작화 스타일
-    cuts: ''        // 컷 수
+    content: '',    
+    character: '',  
+    genre: '',      
+    style: '',      
+    cuts: ''        
   });
+
+  // 2. 일기 목록 데이터 State (초기값은 빈 배열)
+  const [diaries, setDiaries] = useState([]);
+  
+  // 3. 로딩 상태 (생성 중일 때 버튼 비활성화용)
+  const [isLoading, setIsLoading] = useState(false);
+
+  // 4. 페이지 로드 시 일기 목록 불러오기 (useEffect)
+  useEffect(() => {
+    const fetchDiaries = async () => {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) return; // 로그인 안 했으면 패스
+
+      try {
+        // API 호출
+        const data = await getDiaryList(userId);
+        setDiaries(data); // 받아온 데이터로 리스트 업데이트
+      } catch (error) {
+        console.error("일기 목록 불러오기 실패:", error);
+        // 에러 시 그냥 빈 배열 유지 or 더미 데이터 사용
+      }
+    };
+
+    fetchDiaries();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -216,17 +226,49 @@ function DiaryList() {
     });
   };
 
-  const handleCreate = () => {
-    console.log("백엔드로 보낼 데이터:", formData); 
+  // 5. 생성 버튼 클릭 시 (백엔드 전송)
+  const handleCreate = async () => {
+    const userId = localStorage.getItem('user_id');
+    
+    if (!userId) {
+      alert("로그인이 필요합니다.");
+      navigate('/');
+      return;
+    }
 
     if (!formData.content) {
       alert("일기 내용을 입력해주세요!");
       return;
     }
 
-    alert("데이터 저장 완료! 콘솔창을 확인하세요. 상세 페이지로 이동합니다.");
-    // TODO: 백엔드 전송 로직
-    navigate('/diaries/1'); 
+    setIsLoading(true); // 로딩 시작 (버튼 비활성화)
+
+    try {
+      // 백엔드 API 명세에 맞춰 데이터 변환
+      const payload = {
+        user_id: userId,
+        original_content: formData.content,
+        genre: formData.genre || "일상", // 입력 안하면 기본값
+        style: formData.style || "웹툰",
+        character_note: formData.character,
+        cuts_count: parseInt(formData.cuts) || 4 // 숫자로 변환
+      };
+
+      console.log("전송 데이터:", payload);
+
+      // API 호출
+      const response = await createDiary(payload);
+      
+      alert("일기 생성이 완료되었습니다!");
+      // 생성된 일기 상세 페이지로 이동 (response.diary_id 활용)
+      navigate(`/diaries/${response.diary_id}`);
+
+    } catch (error) {
+      console.error("일기 생성 실패:", error);
+      alert("일기 생성 중 오류가 발생했습니다.");
+    } finally {
+      setIsLoading(false); // 로딩 끝
+    }
   };
 
   const handleCardClick = (id) => {
@@ -279,26 +321,39 @@ function DiaryList() {
             />
           </InputRow>
 
-          <CreateButton onClick={handleCreate}>
-            🎨 만화 일기 생성하기
+          <CreateButton onClick={handleCreate} disabled={isLoading}>
+            {isLoading ? "생성 중입니다..." : "🎨 만화 일기 생성하기"}
           </CreateButton>
         </CreateSection>
 
 
         <SectionTitle>지난 일기장</SectionTitle>
         <ListSection>
-          {DUMMY_DIARIES.map((diary) => (
-            <DiaryCard key={diary.id} onClick={() => handleCardClick(diary.id)}>
+          {/* 데이터가 없을 때 안내 문구 */}
+          {diaries.length === 0 && (
+             <div style={{textAlign: 'center', color: '#888', padding: '20px'}}>
+               작성된 일기가 없습니다. 첫 일기를 만들어보세요!
+             </div>
+          )}
+
+          {/* API에서 받아온 데이터로 리스트 렌더링 */}
+          {diaries.map((diary) => (
+            <DiaryCard key={diary.diary_id} onClick={() => handleCardClick(diary.diary_id)}>
               <CardDate>{diary.date}</CardDate>
               <CardContent>
                 <TextPreview>
                   <strong>[원문]</strong> 
-                  {diary.original.length > 30 ? diary.original.substring(0, 30) + "..." : diary.original}
+                  {/* 내용이 길면 자르기 */}
+                  {diary.original_content && diary.original_content.length > 30 
+                    ? diary.original_content.substring(0, 30) + "..." 
+                    : diary.original_content}
                 </TextPreview>
                 
                 <TextPreview style={{ color: '#333', fontWeight: 'bold' }}>
                   <strong>[이야기]</strong> 
-                  {diary.llm}
+                  {diary.full_story && diary.full_story.length > 30 
+                    ? diary.full_story.substring(0, 30) + "..." 
+                    : diary.full_story}
                 </TextPreview>
               </CardContent>
               <ArrowIcon>자세히 보기 →</ArrowIcon>

@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { useNavigate, Link } from 'react-router-dom';
 import { signupUser } from '../api'; // API 함수 불러오기
 
-// --- CSS (기존과 동일) ---
+// --- CSS ---
 
 const Container = styled.div`
   display: flex;

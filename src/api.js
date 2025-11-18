@@ -54,3 +54,9 @@ export const regenerateCutImage = async (cutId, promptData) => {
   const response = await api.post(`/api/cuts/${cutId}/regenerate`, promptData);
   return response.data;
 };
+
+// 8. 일기 전체 재생성 API
+export const regenerateFullDiary = async (diaryId, updateData) => {
+    const response = await api.post(`/api/diaries/${diaryId}/regenerate`, updateData);
+    return response.data;
+};
