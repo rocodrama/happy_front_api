@@ -60,3 +60,9 @@ export const regenerateFullDiary = async (diaryId, updateData) => {
     const response = await api.post(`/api/diaries/${diaryId}/regenerate`, updateData);
     return response.data;
 };
+
+// 9. 일기 삭제
+export const deleteDiary = async (diaryId) => {
+  const response = await api.delete(`/api/diaries/${diaryId}`);
+  return response.data; // 응답 데이터는 없지만, 204 성공 코드를 확인
+};

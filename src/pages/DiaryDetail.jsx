@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'; // State, Effect 추가
 import { useParams, useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import Header from '../components/Header';
-import { getDiaryDetail } from '../api'; // API 함수 불러오기
+import { getDiaryDetail, deleteDiary } from '../api'; // API 함수 불러오기
 
 // --- 스타일 정의 (기존과 동일) ---
 
@@ -69,6 +69,15 @@ const SmallButton = styled.button`
     color: #6aaefe;
     &:hover {
       background-color: #6aaefe;
+      color: white;
+    }
+  }
+
+  &.delete {
+    border-color: #dc3545; /* 빨간색 계열 테두리 */
+    color: #dc3545; 
+    &:hover {
+      background-color: #dc3545;
       color: white;
     }
   }
@@ -200,6 +209,24 @@ function DiaryDetail() {
   const [diary, setDiary] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const handleDeleteDiary = async () => {
+    if (!window.confirm('정말로 이 일기를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+        return;
+    }
+    
+    setLoading(true); // 로딩 상태 활성화 (UX 개선)
+    try {
+        await deleteDiary(id); // API 호출
+        alert('일기가 성공적으로 삭제되었습니다.');
+        navigate('/diaries'); // 삭제 후 일기 목록 페이지로 이동
+    } catch (error) {
+        console.error('Failed to delete diary:', error);
+        alert('일기 삭제에 실패했습니다.');
+    } finally {
+        setLoading(false);
+    }
+  };
+
   // 2. 데이터 불러오기 (useEffect)
   useEffect(() => {
     const fetchData = async () => {
@@ -248,6 +275,9 @@ function DiaryDetail() {
               </SmallButton>
               <SmallButton className="edit" onClick={() => navigate(`/diaries/${id}/edit`)}>
                 수정
+              </SmallButton>
+              <SmallButton className="delete" onClick={handleDeleteDiary} disabled={loading}>
+                삭제
               </SmallButton>
             </TopBtnGroup>
           </HeaderRow>
