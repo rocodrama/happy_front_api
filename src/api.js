@@ -1,39 +1,39 @@
-import axios from 'axios';
+import axios from "axios";
 
 // 백엔드 서버 주소 (나중에 백엔드 개발자가 알려주는 주소로 바꾸세요 예: http://3.14.15.92:8000)
-const BASE_URL = 'http://localhost:8000'; 
+const BASE_URL = "https://diary-backend-771355659969.asia-northeast3.run.app";
 
 const api = axios.create({
   baseURL: BASE_URL,
-  headers: { 'Content-Type': 'application/json' }
+  headers: { "Content-Type": "application/json" },
 });
 
 // 1. 회원가입
 export const signupUser = async (userData) => {
   // userData 예시: { email: "a@a.com", password: "123", nickname: "kim" }
-  const response = await api.post('/api/users/signup', userData);
+  const response = await api.post("/api/users/signup", userData);
   return response.data;
 };
 
 // 2. 로그인
 export const loginUser = async (loginData) => {
   // loginData 예시: { email: "a@a.com", password: "123" }
-  const response = await api.post('/api/auth/login', loginData);
+  const response = await api.post("/api/auth/login", loginData);
   return response.data;
 };
 
 // 3. 일기 생성
 export const createDiary = async (diaryData) => {
   // diaryData 예시: { user_id: 1, original_content: "...", genre: "..." }
-  const response = await api.post('/api/diaries', diaryData);
-  return response.data; 
+  const response = await api.post("/api/diaries", diaryData);
+  return response.data;
   // 반환값 예시: { message: "완료", diary_id: 15 }
 };
 
 // 4. 일기 목록 조회
 export const getDiaryList = async (userId) => {
   const response = await api.get(`/api/diaries?user_id=${userId}`);
-  return response.data; 
+  return response.data;
   // 반환값: [{ diary_id: 15, original_content: "..." }, ... ]
 };
 
@@ -57,8 +57,11 @@ export const regenerateCutImage = async (cutId, promptData) => {
 
 // 8. 일기 전체 재생성 API
 export const regenerateFullDiary = async (diaryId, updateData) => {
-    const response = await api.post(`/api/diaries/${diaryId}/regenerate`, updateData);
-    return response.data;
+  const response = await api.post(
+    `/api/diaries/${diaryId}/regenerate`,
+    updateData
+  );
+  return response.data;
 };
 
 // 9. 일기 삭제
